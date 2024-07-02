@@ -1,0 +1,57 @@
+
+#trying KNN to predict whether price of a flat is above or bellow average
+
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler 
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("/Users/vojtechnaar/Desktop/Python/Test_data_csv/HPRICE1.csv")
+
+#print(data.head(10))
+#print(data.price.mean())
+mean_price = data.price.mean()
+
+data["Above_average_price"] = data.price.apply(lambda x: 1 if x >= mean_price else 0)
+#print(data.head())
+
+scaler = MinMaxScaler()
+data[["sqrft_norm"]] = scaler.fit_transform(data[["sqrft"]])
+data[["bdrms_norm"]] = scaler.fit_transform(data[["bdrms"]])
+#print(data.head())
+
+outcome_var = "Above_average_price"
+input_var = ["bdrms_norm", "sqrft_norm"]
+
+xtrain, xtest, ytrain, ytest = train_test_split(data[input_var], data[outcome_var], test_size = 0.3, random_state=1)
+
+#plotting which K is best (csv file is small), the best for test_size = 0.3 and random_state = 1 is k = 5
+
+accuracy = []
+x_valuesforgraph = []
+k = 0
+for i in range(10):
+    k += 1
+
+    classifier = KNeighborsClassifier(k)
+    classifier.fit(xtrain, ytrain)
+
+    y_predicted = classifier.predict(xtest)
+
+    print(y_predicted)
+    print(ytest.values.ravel())
+
+    score = 0
+    for outcome1, outcome2 in zip(y_predicted, ytest):
+        if outcome1 == outcome2:
+            score += 1
+
+    accuracy.append(score/len(ytest))
+    x_valuesforgraph.append(k)
+print(accuracy)
+
+plt.plot(x_valuesforgraph, accuracy)
+plt.show()
+plt.close()
+
