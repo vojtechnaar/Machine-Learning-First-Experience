@@ -1,1 +1,1 @@
-Machine Learning First Experience repository are my early machine learning projects
+Machine Learning First Experience repository are my early machine learning projects/practice
