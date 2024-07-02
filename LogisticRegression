@@ -1,0 +1,33 @@
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+
+data = pd.read_csv("/Users/vojtechnaar/Desktop/Python/Test_data_csv/insurance.csv")
+print(data.head())
+
+data["sex_1_0"] = data.sex.apply(lambda x: 1 if x == "male" else 0)
+dummy = pd.get_dummies(data.region)
+data = pd.concat([data,dummy], axis = 1)
+
+print(data.head())
+
+predictor_var = ["age","bmi","charges", "northeast", "northwest","southeast","southwest"]
+outcom_var = ["sex_1_0"]
+
+x_train, x_test, y_train, y_test = train_test_split(data[predictor_var], data[outcom_var], test_size=0.3)
+
+log_reg = LogisticRegression()
+log_reg.fit(x_train, y_train)
+
+y_predicted = log_reg.predict(x_test)
+print(y_predicted)
+
+con_matrix = confusion_matrix(y_test, y_predicted)
+print(con_matrix)
+
+print(accuracy_score(y_test, y_predicted))
+
+#dataset was not ideal for Logistic Regression so accuracy score is really low (0.50995), model predicted correctly only a little over half
