@@ -1,0 +1,116 @@
+
+#in this project I try to observe how train and test data accuracy changes with different regularization (alpha (lambda in literature))
+#I use simple Ridge from scikit learn, altough theoretically the relationship is known, 
+#I use random dataset so the outcome could not be the best representation of the relationship
+#in the second part I do the same thing but with scaled data
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import Ridge, LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("/Users/vojtechnaar/Desktop/Python/Test_data_csv/skoda.csv")
+#print(data)
+dummy_fuel =pd.get_dummies(data["fuel"])
+dummy_model = pd.get_dummies(data["model"])
+data = pd.concat([data, dummy_fuel, dummy_model], axis=1)
+#print(data)
+
+y = data["price"]
+X = data[["km","year", "combi", "autogas", "diesel", "petrol", "Felicia", "Octavia", "Superb"]]
+
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+
+#simple Linear Regression
+model1 = LinearRegression()
+model1.fit(x_train, y_train)
+#print(model1.intercept_)
+#print(model1.coef_)
+y_predicted = model1.predict(x_test)
+
+#print(mean_squared_error(y_train, model1.predict(x_train)))
+#print(mean_squared_error(y_test, y_predicted))
+
+#Ridge with different alphas
+alphas = [0.001, 0.1, 1, 4.5, 10, 50, 100]
+mean_squares_training = []
+mean_squares_test = []
+r2_scores = []
+
+for alpha in alphas:
+    ridge_model = Ridge(alpha = alpha)
+    ridge_model.fit(x_train, y_train)
+    y_pred = ridge_model.predict(x_test)
+
+    mean_squares_training.append(mean_squared_error(y_train, ridge_model.predict(x_train)).round(2))
+    mean_squares_test.append(mean_squared_error(y_test, y_pred).round(2))
+    r2_scores.append(r2_score(y_test, y_pred))
+
+print(max(r2_scores))
+
+#print(mean_squares_training)
+#print(mean_squares_test)
+plt.figure("MSE and alphas without scaler")
+plt.subplot(1, 2, 1)
+plt.plot(alphas, mean_squares_training, marker = "o")
+plt.xscale('log')
+plt.xticks(alphas)  
+plt.title("Training MSE")
+
+plt.subplot(1, 2, 2)
+plt.plot(alphas, mean_squares_test, marker = "o")
+plt.xscale('log')
+plt.xticks(alphas)  
+plt.title("Test MSE")
+
+plt.show()
+plt.close()
+#best alpha is around 4.5 without scaler
+
+#the same code with scaler
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+
+x_train_scaled = scaler.fit_transform(x_train)
+x_test_scaled = scaler.transform(x_test)
+
+#Lasso with different alphas
+alphas = [1, 10, 50, 75, 100, 150, 200]
+mean_squares_training = []
+mean_squares_test = []
+r2_scores = []
+
+for alpha in alphas:
+    ridge_model = Ridge(alpha = alpha)
+    ridge_model.fit(x_train_scaled, y_train)
+    y_pred = ridge_model.predict(x_test_scaled)
+
+    mean_squares_training.append(mean_squared_error(y_train, ridge_model.predict(x_train_scaled)).round(2))
+    mean_squares_test.append(mean_squared_error(y_test, y_pred).round(2))
+    r2_scores.append(r2_score(y_test, y_pred))
+
+print(max(r2_scores))
+
+#print(mean_squares_training)
+#print(mean_squares_test)
+plt.figure("MSE and alphas with scaler")
+plt.subplot(1, 2, 1)
+plt.plot(alphas, mean_squares_training, marker = "o")
+plt.xscale('log')
+plt.xticks(alphas)  
+plt.title("Training MSE")
+
+plt.subplot(1, 2, 2)
+plt.plot(alphas, mean_squares_test, marker = "o")
+#plt.xscale('log')
+plt.xticks(alphas)  
+plt.title("Test MSE")
+
+plt.show()
+plt.close()
+
+#best alpha for scaled X is around 75
