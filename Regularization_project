@@ -3,6 +3,7 @@
 #I use simple Ridge from scikit learn, altough theoretically the relationship is known, 
 #I use random dataset so the outcome could not be the best representation of the relationship
 #in the second part I do the same thing but with scaled data
+#random data with car prices from my uni
 
 import pandas as pd
 import numpy as np
