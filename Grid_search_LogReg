@@ -1,0 +1,33 @@
+#simple logistic regression to try hyperparameters search
+
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+
+data = pd.read_csv("/Users/vojtechnaar/Desktop/Python/Test_data_csv/skoda.csv")
+#print(data.head(10))
+data = data[data["fuel"].isin(["petrol", "diesel"])]
+data["fuel_binary"] = data.fuel.apply(lambda x: 1 if x == "diesel" else 0)
+print(data.head(10))
+
+
+X = data[["price", "km", "year", "combi"]]
+y = data["fuel_binary"]
+x_test, x_train, y_test, y_train = train_test_split(X, y, test_size = 0.2, random_state = 1)
+
+Log_Model = LogisticRegression()
+parameters = {"C": [0.01, 0.1, 1, 10, 100], "solver": ["liblinear", "lbfgs"]}
+
+grid_search = GridSearchCV(estimator=Log_Model, param_grid=parameters, cv=5, scoring='accuracy')
+grid_search.fit(x_train, y_train)
+
+print("Best hyperparameters:", grid_search.best_params_)
+print("Best accuracy:", grid_search.best_score_)
+
+#Best hyperparameters: {'C': 0.01, 'solver': 'liblinear'}
+#Best accuracy: 0.8294871794871795
+
+#print(grid_search.cv_results_)
+#print(grid_search.best_estimator_)
