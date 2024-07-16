@@ -1,0 +1,53 @@
+# trying to predict diesel/petrol fuel with logistic regression and grid search optimization
+# ROC AUC curve
+
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import accuracy_score, roc_curve, roc_auc_score
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("/Users/vojtechnaar/Desktop/Python/Test_data_csv/skoda.csv")
+#print(data)
+#print(data.info())
+
+data = data[data["fuel"] != "autogas"]
+#print(data)
+#print(data.info())
+
+data["fuel_diesel_1"] = data.fuel.apply(lambda x: 1 if x == "diesel" else 0)
+#print(data)
+
+y = data["fuel_diesel_1"]
+X = data[["price", "km", "year", "combi"]]
+
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 2)
+
+log_reg_model = LogisticRegression()
+grid_parameters = {"C": [0.001, 0.01, 0.1, 1, 10]}
+
+grid_model = GridSearchCV(estimator = log_reg_model, param_grid = grid_parameters, scoring = "accuracy", cv = 5)
+
+grid_model.fit(x_train, y_train)
+
+print(grid_model.best_estimator_)
+print(grid_model.best_score_)
+
+print(grid_model.predict_proba(x_test))
+print(accuracy_score(y_test, grid_model.predict(x_test)))
+
+# difference between diesel and petroleum is so clear in data that regularization basically doesnt matter,
+# the model has basically the same score for whatever C is, 
+# the only difference we can see with different Cs is small change in probabilities
+
+fpr, tpr, thresholds = roc_curve(y_test, grid_model.predict(x_test))
+roc_auc = roc_auc_score(y_test, grid_model.predict(x_test))
+
+plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='grey', lw=2, linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.show()
+plt.close()
