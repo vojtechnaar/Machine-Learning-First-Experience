@@ -1,0 +1,69 @@
+
+# comparing simple decision tree and random forrest
+# to ensure r2 is not higher for random forrest in a particular random state
+# I did a for-loop with 50 different random states
+
+import pandas as pd
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
+data = pd.read_csv("/Users/vojtechnaar/Desktop/Python/Test_data_csv/skoda.csv")
+#print(data.info())
+
+data = data[data["fuel"] != "autogas"]
+#print(data.info())
+
+dummy_model = pd.get_dummies(data["model"])
+dummy_fule = pd.get_dummies(data["fuel"])
+data = pd.concat([data, dummy_model, dummy_fule], axis=1)
+#print(data.head(10))
+
+outcome_variable = ["price"]
+input_variables = ["km", "year", "combi", "Felicia", "Octavia", "Superb", "diesel", "petrol"]
+
+r2_simple_dtrees  = []
+r2_randomforrest = []
+
+for i in range(50):
+
+    x_train, x_test, y_train, y_test = train_test_split(data[input_variables], data[outcome_variable], test_size = 0.2, random_state = i)
+
+    # -------------- Simple Decision Tree Model --------------
+
+    dtree = DecisionTreeRegressor()
+    dtree.fit(x_train, y_train.values.ravel())
+    y_pred = dtree.predict(x_test)
+
+    r2_simple_dtrees.append(r2_score(y_pred, y_test))
+
+    # ----------------- Random Forrest Model -----------------
+
+    model = RandomForestRegressor(n_estimators = 100)
+    model.fit(x_train, y_train.values.ravel())
+
+    y_pred = model.predict(x_test)
+
+    r2_randomforrest.append(r2_score(y_pred, y_test))
+    
+simple_dtree_mean = np.mean(r2_simple_dtrees)
+random_forrest_mean = np.mean(r2_randomforrest)
+
+print("Average r2 for a simple tree: ", simple_dtree_mean)
+# 0.8333339185029789
+
+print("Average r2 for a random forrest: ", random_forrest_mean)
+# 0.8676138850335097
+
+plt.plot(r2_simple_dtrees, label = "Simple DTree", c = "red")
+plt.plot(r2_randomforrest, label = "Random Forrest", c = "blue")
+plt.title("Comparison between DTree and Random Forrest")
+plt.legend()
+plt.show()
+plt.close()
+
+# average r2 is higher with Random Forrest but some random states are the opposite
+
