@@ -1,0 +1,84 @@
+# with this code I wanna see what percentage of variance is PCA able to catch, I compare 
+# accuracy with classic Logistic Regression and compare accuracy for different numbers of dimensions in PCA
+
+import pandas as pd
+import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import load_breast_cancer
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+data = load_breast_cancer()
+
+X = pd.DataFrame(data.data, columns=data.feature_names)
+y = pd.Series(data.target)
+
+print("Number of columns in original set: ", len(X.columns))
+# 1 being cancerous tumour, 0 being non-cancerous
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+#   ------- simple model without dimensions reduction -------
+random_states = [1,2,3,4,5,6,7,8,9,10]
+accuracy_list_simple = []
+
+for i in random_states:
+    x_train, x_test, y_train, y_test = train_test_split(X_scaled, y, test_size = 0.25, random_state = i)
+
+    model1 = LogisticRegression()
+    model1.fit(x_train, y_train)
+
+    y_pred = model1.predict(x_test)
+    accuracy = accuracy_score(y_pred, y_test)
+
+    accuracy_list_simple.append(accuracy)
+
+mean_accuracy_simple = np.mean(accuracy_list_simple)
+print("Mean accuracy in simple Logistic Regression: ", mean_accuracy_simple)
+
+#   ------- multiple models with dimension reduction -------
+
+# to try in multiple random states, I create matrix with columns as different number of dimensions 
+# and then do average of those columns
+
+random_states_pca = [1,2,3,4,5,6,7,8,9,10]
+accuracy_list_pca = [[] for num in random_states_pca]
+list_of_dimension = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+
+for state_pca in random_states:
+
+    x_train, x_test, y_train, y_test = train_test_split(X_scaled, y, test_size = 0.25, random_state = state_pca)
+
+    for i in list_of_dimension:
+
+        pca = PCA(n_components = i)
+        x_train_pca = pca.fit_transform(x_train)
+        x_test_pca = pca.transform(x_test)
+
+        model = LogisticRegression()
+        model.fit(x_train_pca, y_train)
+
+        y_pred = model.predict(x_test_pca)
+
+        accuracy_list_pca[state_pca-1].append(accuracy_score(y_pred, y_test))
+
+#print(accuracy_list_pca)
+
+accuracy_matrix = np.array(accuracy_list_pca)
+
+column_averages = np.mean(accuracy_matrix, axis=0)
+
+print("Mean accuracy for listed dimensions: ", column_averages)
+
+plt.plot(list_of_dimension, column_averages, label = "Accuracy of Dimensions")
+plt.axhline(mean_accuracy_simple, color = "r", label = "Simple Logistic Regression Accuracy")
+plt.legend()
+plt.xticks(np.arange(1, 21, 1))
+plt.show()
+plt.close()
+
+# we can see that with around 10 dimensions out of 30 we can get practically the same accuracy  
